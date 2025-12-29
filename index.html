@@ -3,151 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Selfie-Med Agentic AI Demo (GG1)</title>
+    <title>Selfie-Med Agentic AI - Build GG1</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; background: #f3f4f6; overflow: hidden; }
-        .agentic-status { font-family: monospace; color: #059669; }
-        .fade-enter { opacity: 0; transform: translateY(10px); }
-        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 500ms; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.6s ease-out; }
+        .ai-status-glow { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 font-sans antialiased">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
         const App = () => {
-            const [currentPage, setCurrentPage] = useState('welcome');
-            const [status, setStatus] = useState('Initializing agent...');
-            const [isPaused, setIsPaused] = useState(false);
-            const synthesisRef = useRef(window.speechSynthesis);
+            const [currentPage, setCurrentPage] = useState(0);
+            const [animationState, setAnimationState] = useState('playing');
+            const [status, setStatus] = useState("Agent Initializing...");
+            const synthRef = useRef(window.speechSynthesis);
 
-            // 20-Page Narration Map
-            const voiceMap = {
-                'welcome': "Hello, I am your Selfie-Med nurse assistant. I'll help you manage your health data today.",
-                'demo1': "First, let's verify your personal clinical profile and contact information.",
-                'demo2': "Thank you. Now, please confirm your current physical metrics and health status.",
-                'devices': "I am ready to sync your monitoring hardware. Please have your devices ready.",
-                'scan1': "Scanning glucose monitor... analyzing the display for current levels.",
-                'scan2': "Reading blood pressure cuff... capturing systolic and diastolic values.",
-                'scan3': "Accessing smart scale... stabilizing weight and body mass index data.",
-                'dev-img': "All device images have been captured and verified for clinical clarity.",
-                'sum1': "Reviewing your personal data for accuracy before finalizing the record.",
-                'sum2': "Device registration is complete. Your hardware is now linked to your profile.",
-                'trends': "Analyzing your historical data. Your vitals show positive stability this week.",
-                'appts': "Checking your schedule. You have a follow-up consultation coming up soon.",
-                'med1': "Medication reminder. It is time for your scheduled morning dose.",
-                'med2': "Please hold your pillbox up to the camera for prescription verification.",
-                'med3': "Verifying medications... compliance logged for today's treatment plan.",
-                'med4': "Medication management update complete. Your logs are now synchronized.",
-                'concern': "I've analyzed your symptoms. Based on your readings, I've generated these recommendations.",
-                'team': "I've prepared your health summary. Should I share this with your care team now?",
-                'sending': "Establishing secure connection... transmitting data to your healthcare provider.",
-                'complete': "All tasks complete. Your data is secure and your team has been updated. Goodbye!"
-            };
-
-            const pageOrder = [
-                'welcome', 'demo1', 'demo2', 'devices', 'scan1', 'scan2', 'scan3', 
-                'dev-img', 'sum1', 'sum2', 'trends', 'appts', 'med1', 'med2', 
-                'med3', 'med4', 'concern', 'team', 'sending', 'complete'
+            // High-Fidelity Data & Weaved Narrative Map
+            const pages = [
+                { 
+                    id: 'welcome', 
+                    title: 'Selfie-Med Portal', 
+                    img: '🏥', 
+                    text: 'Welcome to your Selfie-Med Total Health Solution.', 
+                    narration: "Welcome to Selfie-Med. I am your nurse assistant, and I'll be guiding you through your health dashboard setup today.",
+                    step: "Initializing Clinical Environment..." 
+                },
+                { 
+                    id: 'demo1', 
+                    title: 'Patient Profile', 
+                    img: '👤', 
+                    text: 'Name: James Wilson | Address: 123 Health Way', 
+                    narration: "I am accessing your patient profile to confirm your name is James Wilson, currently residing at 1-2-3 Health Way.",
+                    step: "Verifying Demographic Records..." 
+                },
+                { 
+                    id: 'demo2', 
+                    title: 'Clinical Metrics', 
+                    img: '📊', 
+                    text: 'Height: 6ft 0in | Weight: 185 lbs', 
+                    narration: "Next, I am recording your baseline clinical metrics, including your height of six feet and your current weight of 185 pounds.",
+                    step: "Calculating BMI & Baselines..." 
+                },
+                { 
+                    id: 'bp_scan', 
+                    title: 'Blood Pressure Scan', 
+                    img: '🩺', 
+                    text: 'Extracting: 118/75 mmHg', 
+                    narration: "I am now activating the camera to scan your blood pressure cuff. I've successfully extracted a reading of 118 over 75, which is within your target range.",
+                    step: "Vision AI: Character Recognition..." 
+                },
+                { 
+                    id: 'glu_scan', 
+                    title: 'Glucose Monitoring', 
+                    img: '🩸', 
+                    text: 'Current Level: 95 mg/dL', 
+                    narration: "I am performing a visual analysis of your glucose monitor. Your current level is 95 milligrams per deciliter.",
+                    step: "Analyzing Spectrometric Data..." 
+                },
+                { 
+                    id: 'trends', 
+                    title: 'Health Trends', 
+                    img: '📈', 
+                    text: 'Status: Stable Activity Levels', 
+                    narration: "Looking at your longitudinal data, I can see that your activity levels have remained stable over the last seven days. Excellent work.",
+                    step: "Parsing Historical Data Patterns..." 
+                },
+                { 
+                    id: 'meds', 
+                    title: 'Medication Sync', 
+                    img: '💊', 
+                    text: 'Zocor 20mg: 12:00 PM Dose', 
+                    narration: "It's now time for your 12 PM dose of Zocor, 20 milligrams. I am logging your compliance for this afternoon's treatment.",
+                    step: "Cross-Referencing Prescription Log..." 
+                },
+                { 
+                    id: 'team', 
+                    title: 'Care Team Review', 
+                    img: '👩‍⚕️', 
+                    text: 'Send clinical summary to Dr. Ellis?', 
+                    narration: "I have prepared your full clinical summary. Would you like me to securely transmit this data to Doctor Ellis and your care team?",
+                    step: "Awaiting Clinical Authorization..." 
+                }
             ];
 
-            const speakAndHold = (text) => {
+            const speak = (text) => {
                 return new Promise((resolve) => {
-                    synthesisRef.current.cancel();
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.pitch = 1.1; 
-                    utterance.rate = 0.95;
-                    utterance.onend = () => resolve();
-                    synthesisRef.current.speak(utterance);
+                    synthRef.current.cancel();
+                    const msg = new SpeechSynthesisUtterance(text);
+                    
+                    // CALMING FEMALE PERSONA SETTINGS
+                    const voices = synthRef.current.getVoices();
+                    msg.voice = voices.find(v => v.name.includes('Female') || v.name.includes('Aria') || v.name.includes('Google US English')) || voices[0];
+                    msg.pitch = 0.85; 
+                    msg.rate = 0.82; 
+                    
+                    msg.onend = () => setTimeout(resolve, 1000); // Small buffer before page turn
+                    synthRef.current.speak(msg);
                 });
             };
 
-            const runFlow = async () => {
-                for (let i = 0; i < pageOrder.length; i++) {
-                    const page = pageOrder[i];
-                    setCurrentPage(page);
-                    setStatus(`Agentic Step: ${page.replace('-', ' ').toUpperCase()}...`);
+            const runAgenticFlow = async () => {
+                for (let i = currentPage; i < pages.length; i++) {
+                    if (animationState === 'paused') break;
                     
-                    // The Logic Gate
-                    await speakAndHold(voiceMap[page]);
+                    setCurrentPage(i);
+                    setStatus(pages[i].step);
                     
-                    // Pause between steps
-                    await new Promise(r => setTimeout(r, 800));
+                    // Logic Gate: AI speaks while text is visible
+                    await speak(pages[i].narration);
                     
-                    // Handle decision point at 'team'
-                    if (page === 'team') {
-                        setStatus("Awaiting user decision...");
-                        return; // Stop here for user input
+                    if (pages[i].id === 'team') {
+                        setAnimationState('paused');
+                        break;
                     }
                 }
             };
 
-            // Auto-Start
             useEffect(() => {
-                runFlow();
-            }, []);
+                if (animationState === 'playing') runAgenticFlow();
+            }, [animationState]);
 
             const handleToggle = () => {
-                if (isPaused) {
-                    synthesisRef.current.resume();
-                    setIsPaused(false);
+                if (animationState === 'playing') {
+                    synthRef.current.pause();
+                    setAnimationState('paused');
                 } else {
-                    synthesisRef.current.pause();
-                    setIsPaused(true);
+                    synthRef.current.resume();
+                    setAnimationState('playing');
                 }
             };
 
             return (
-                <div className="flex flex-col h-screen bg-white max-w-md mx-auto border-x shadow-2xl overflow-hidden">
-                    <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
-                        <h1 className="font-bold text-lg">Selfie-Med AI</h1>
-                        <div className="flex gap-2">
-                            <button onClick={handleToggle} className="p-1 hover:bg-blue-700 rounded">
-                                {isPaused ? "▶️" : "⏸️"}
-                            </button>
-                            <button onClick={() => window.location.reload()} className="p-1 hover:bg-blue-700 rounded">🔄</button>
+                <div className="flex items-center justify-center min-h-screen p-4 bg-slate-200">
+                    <div className="w-full max-w-md bg-white rounded-[3rem] shadow-2xl overflow-hidden border-[12px] border-slate-800 h-[800px] flex flex-col relative">
+                        {/* Top Bar */}
+                        <div className="bg-indigo-600 p-8 pt-12 text-white">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-[10px] font-bold tracking-[0.2em] uppercase opacity-80">Selfie-Med Agentic AI</span>
+                                <div className="flex gap-4">
+                                    <button onClick={handleToggle} className="hover:scale-110 transition-transform">
+                                        {animationState === 'playing' ? '⏸️' : '▶️'}
+                                    </button>
+                                    <button onClick={() => window.location.reload()} className="hover:rotate-180 transition-all duration-500">🔄</button>
+                                </div>
+                            </div>
+                            <h1 className="text-2xl font-bold transition-all duration-500">{pages[currentPage].title}</h1>
                         </div>
-                    </div>
 
-                    <div className="flex-1 p-6 flex flex-col items-center justify-center text-center">
-                        <div className="mb-8 w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center animate-pulse">
-                            <span className="text-4xl">👩‍⚕️</span>
-                        </div>
-                        
-                        <h2 className="text-2xl font-semibold text-gray-800 mb-4 capitalize">
-                            {currentPage.replace('-', ' ')}
-                        </h2>
-                        
-                        <p className="text-gray-600 mb-6 italic">
-                            "{voiceMap[currentPage]}"
-                        </p>
+                        {/* Visual Display Area */}
+                        <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
+                            <div className="w-32 h-32 bg-indigo-50 rounded-full flex items-center justify-center mb-8 fade-in ai-status-glow border-4 border-white">
+                                <span className="text-6xl">{pages[currentPage].img}</span>
+                            </div>
+                            
+                            <div className="min-h-[100px] mb-8">
+                                <p className="text-lg text-slate-500 font-medium leading-relaxed mb-4 italic">
+                                    "{pages[currentPage].text}"
+                                </p>
+                            </div>
 
-                        <div className="w-full bg-gray-100 rounded-lg p-4 text-left">
-                            <div className="agentic-status text-xs mb-2 uppercase tracking-widest font-bold">AI Processing</div>
-                            <div className="text-sm text-gray-700 leading-relaxed">
-                                {status}
+                            {/* Agent Thinking Box */}
+                            <div className="w-full bg-slate-900 rounded-2xl p-5 text-left border-b-4 border-indigo-500">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-ping"></div>
+                                    <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">AI internal Processing</span>
+                                </div>
+                                <div className="text-sm text-indigo-100 font-mono">
+                                    {status}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="p-4 bg-gray-50 border-t">
-                        <div className="flex justify-between mb-4">
-                            {pageOrder.map((p, i) => (
-                                <div key={i} className={`h-1.5 flex-1 mx-0.5 rounded-full ${pageOrder.indexOf(currentPage) >= i ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-                            ))}
-                        </div>
-                        {currentPage === 'team' && (
-                            <div className="flex gap-4">
-                                <button onClick={() => setCurrentPage('sending')} className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold">Yes, Send Data</button>
-                                <button className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-bold">No, Keep Private</button>
+                        {/* Progress Dots */}
+                        <div className="p-8 bg-white border-t border-slate-100">
+                            <div className="flex gap-1.5">
+                                {pages.map((_, i) => (
+                                    <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-700 ${i <= currentPage ? 'bg-indigo-600' : 'bg-slate-200'}`}></div>
+                                ))}
                             </div>
-                        )}
+                            {pages[currentPage].id === 'team' && (
+                                <button 
+                                    onClick={() => {setAnimationState('playing'); setCurrentPage(0); window.location.reload();}}
+                                    className="w-full mt-6 bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-indigo-700 transition-colors"
+                                >
+                                    Transmit Clinical Data
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
